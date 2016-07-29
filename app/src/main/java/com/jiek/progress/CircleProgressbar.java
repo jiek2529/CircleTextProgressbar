@@ -19,36 +19,61 @@ public class CircleProgressbar extends TextView {
 
     /**
      * max of progress
+     * progress最大值
      */
     private int mMax = 100;
+
+    /**
+     * current progress
+     * 当前进度值
+     */
+    private int progress = 0;
+
+    /**
+     * 0:x-right  -90:y-top  90:y-bottom  180:x-left
+     */
+    private float startAngle = -90;
+
+    /**
+     * progress arc width px
+     * 进度圈的厚度
+     */
+    private int progressArcWidth = 4;
+
+    /**
+     * progress arc color
+     */
+    private int progressArcColor = Color.BLUE;
+
+    /**
+     * progress type
+     */
+    private ProgressDirection mProgressDirection = ProgressDirection.COUNTERCLOCKWISE;
+
+    /**
+     * down time count (millisecond)
+     */
+    private long counter_millisecond = 5000;
+
+
     /**
      * shape stroke color
      */
-    private int outLineColor = Color.TRANSPARENT;
+    private int shapeStrokeColor = Color.GRAY;
 
     /**
      * shape stroke width
      */
-    private int outLineWidth = 2;
+    private int shapeStrokeWidth = 10;
 
     /**
      * solid circle color
      */
-    private ColorStateList inCircleColors = ColorStateList.valueOf(Color.TRANSPARENT);
+    private ColorStateList solidCircleColors = ColorStateList.valueOf(Color.BLUE);
     /**
      * solid circle
      */
     private int circleColor;
-
-    /**
-     * progress line color
-     */
-    private int progressLineColor = Color.BLUE;
-
-    /**
-     * progress line width px
-     */
-    private int progressLineWidth = 8;
 
     /**
      * paint
@@ -59,19 +84,6 @@ public class CircleProgressbar extends TextView {
      *
      */
     private RectF mArcRect = new RectF();
-
-    /**
-     * current progress
-     */
-    private int progress = 0;
-    /**
-     * progress type
-     */
-    private ProgressDirection mProgressDirection = ProgressDirection.COUNTERCLOCKWISE;//_BACK;
-    /**
-     * down time count (millisecond)
-     */
-    private long counter_millisecond = 5000;
 
     /**
      * View rect
@@ -85,11 +97,6 @@ public class CircleProgressbar extends TextView {
      * Listener what。
      */
     private int listenerWhat = 0x0f0f;
-
-    /**
-     * 0:x-right  -90:y-top  90:y-bottom  180:x-left
-     */
-    private float startAngle = -90;
 
     public void setStartAngle(int _startAngle) {
         startAngle = _startAngle;
@@ -144,30 +151,30 @@ public class CircleProgressbar extends TextView {
         mPaint.setAntiAlias(true);
         TypedArray typedArray = context.obtainStyledAttributes(attributeSet, R.styleable.CircleProgressbar);
         if (typedArray.hasValue(R.styleable.CircleProgressbar_in_circle_color))
-            inCircleColors = typedArray.getColorStateList(R.styleable.CircleProgressbar_in_circle_color);
+            solidCircleColors = typedArray.getColorStateList(R.styleable.CircleProgressbar_in_circle_color);
         else
-            inCircleColors = ColorStateList.valueOf(Color.TRANSPARENT);
-        circleColor = inCircleColors.getColorForState(getDrawableState(), Color.TRANSPARENT);
+            solidCircleColors = ColorStateList.valueOf(Color.LTGRAY);
+        circleColor = solidCircleColors.getColorForState(getDrawableState(), Color.DKGRAY);
         typedArray.recycle();
     }
 
     /**
      * shape stroke color
      *
-     * @param outLineColor @ColorInt
+     * @param shapeStrokeColor @ColorInt
      */
-    public void setOutLineColor(@ColorInt int outLineColor) {
-        this.outLineColor = outLineColor;
+    public void setShapeStrokeColor(@ColorInt int shapeStrokeColor) {
+        this.shapeStrokeColor = shapeStrokeColor;
         invalidate();
     }
 
     /**
      * shape stroke width
      *
-     * @param outLineWidth @DimenRes
+     * @param shapeStrokeWidth @DimenRes
      */
-    public void setOutLineWidth(@DimenRes int outLineWidth) {
-        this.outLineWidth = outLineWidth;
+    public void setShapeStrokeWidth(@DimenRes int shapeStrokeWidth) {
+        this.shapeStrokeWidth = dp2pxInt(shapeStrokeWidth);
         invalidate();
     }
 
@@ -177,7 +184,7 @@ public class CircleProgressbar extends TextView {
      * @param inCircleColor @ColorInt
      */
     public void setInCircleColor(@ColorInt int inCircleColor) {
-        this.inCircleColors = ColorStateList.valueOf(inCircleColor);
+        this.solidCircleColors = ColorStateList.valueOf(inCircleColor);
         invalidate();
     }
 
@@ -185,7 +192,7 @@ public class CircleProgressbar extends TextView {
      * validate circle color
      */
     private void validateCircleColor() {
-        int circleColorTemp = inCircleColors.getColorForState(getDrawableState(), Color.TRANSPARENT);
+        int circleColorTemp = solidCircleColors.getColorForState(getDrawableState(), Color.TRANSPARENT);
         if (circleColor != circleColorTemp) {
             circleColor = circleColorTemp;
             invalidate();
@@ -195,20 +202,21 @@ public class CircleProgressbar extends TextView {
     /**
      * set progress color
      *
-     * @param progressLineColor
+     * @param _progressArcColor
      */
-    public void setProgressColor(@ColorInt int progressLineColor) {
-        this.progressLineColor = progressLineColor;
+    public void setProgressColor(@ColorInt int _progressArcColor) {
+        this.progressArcColor = _progressArcColor;
         invalidate();
     }
 
     /**
      * set progress line width (px)
      *
-     * @param progressLineWidth
+     * @param progressArcWidth
      */
-    public void setProgressLineWidth(int progressLineWidth) {
-        this.progressLineWidth = progressLineWidth;
+    public void setProgressArcWidth(int progressArcWidth) {
+        progressArcWidth = dp2pxInt(progressArcWidth);
+        this.progressArcWidth = progressArcWidth;
         invalidate();
     }
 
@@ -319,7 +327,7 @@ public class CircleProgressbar extends TextView {
     /**
      * restart progress task
      */
-    public void reStart() {
+    public void restart() {
         resetProgress();
         start();
     }
@@ -333,47 +341,65 @@ public class CircleProgressbar extends TextView {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        //获取view的边界
+        //fetch view Drawing rect
         getDrawingRect(bounds);
 
         int size = bounds.height() > bounds.width() ? bounds.width() : bounds.height();
         float outerRadius = size / 2;
 
-        //画内部背景
-        int circleColor = inCircleColors.getColorForState(getDrawableState(), 0);
-        mPaint.setStyle(Paint.Style.FILL);
+        //paint background color
+        int circleColor = solidCircleColors.getColorForState(getDrawableState(), 0);
+        /*mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setColor(circleColor);
-        canvas.drawCircle(bounds.centerX(), bounds.centerY(), outerRadius - outLineWidth, mPaint);
+        canvas.drawCircle(
+                bounds.centerX(),
+                bounds.centerY(),
+                outerRadius - shapeStrokeWidth / 2,
+                mPaint);*/
 
-        //画边框圆
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeWidth(outLineWidth);
-        mPaint.setColor(outLineColor);
-        canvas.drawCircle(bounds.centerX(), bounds.centerY(), outerRadius - outLineWidth / 2, mPaint);
+        //paint stroke line
+        if (shapeStrokeWidth > 0) {
+            mPaint.setStyle(Paint.Style.STROKE);
+            mPaint.setStrokeWidth(shapeStrokeWidth);
+            mPaint.setColor(shapeStrokeColor);
+            canvas.drawCircle(
+                    bounds.centerX(),
+                    bounds.centerY(),
+                    outerRadius - shapeStrokeWidth / 2,
+                    mPaint);
+        }
 
-        //画字
+        //paint progress arc
+        //画弧线
+        mPaint.setColor(progressArcColor);
+        mPaint.setStyle(Paint.Style.STROKE);//空心:Paint.Style.STROKE 实心:Paint.Style.FILL
+        mPaint.setStrokeWidth(progressArcWidth);
+        mPaint.setStrokeCap(Paint.Cap.ROUND);
+        int deleteWidth = progressArcWidth;// + shapeStrokeWidth;//压不压外圈线的逻辑区
+        mArcRect.set(bounds.left + deleteWidth / 2, bounds.top + deleteWidth / 2, bounds.right - deleteWidth / 2, bounds.bottom - deleteWidth / 2);
+        canvas.drawArc(
+                mArcRect,
+                startAngle,
+                360 * progress / mMax,
+                false, //useCenter true:显示连心两边线  false:只画圆弧线
+                mPaint);
+
+        //paint text
+        //画文本
         Paint paint = getPaint();
         paint.setColor(getCurrentTextColor());
         paint.setAntiAlias(true);
         paint.setTextAlign(Paint.Align.CENTER);
         float textY = bounds.centerY() - (paint.descent() + paint.ascent()) / 2;
-        canvas.drawText(getText().toString(), bounds.centerX(), textY, paint);
-
-        //画进度条
-        mPaint.setColor(progressLineColor);
-        mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeWidth(progressLineWidth);
-        mPaint.setStrokeCap(Paint.Cap.ROUND);
-        int deleteWidth = progressLineWidth + outLineWidth;
-        mArcRect.set(bounds.left + deleteWidth / 2, bounds.top + deleteWidth / 2, bounds.right - deleteWidth / 2, bounds.bottom - deleteWidth / 2);
-
-        canvas.drawArc(mArcRect, startAngle, 360 * progress / 100, false, mPaint);
+        canvas.drawText(
+                getText().toString(),//"k\n"+progress,
+                bounds.centerX(), textY, paint);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        int lineWidth = 4 * (outLineWidth + progressLineWidth);
+        int lineWidth = 4 * (shapeStrokeWidth + progressArcWidth);
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
         int size = (width > height ? width : height) + lineWidth;
@@ -401,32 +427,60 @@ public class CircleProgressbar extends TextView {
                     progress -= 1;
                     break;
             }
-            if (progress >= 0 && progress <= 100) {
+            if (progress >= 0 && progress <= mMax) {
                 if (mCountdownProgressListener != null)
                     mCountdownProgressListener.onProgress(listenerWhat, progress);
                 invalidate();
-                postDelayed(progressChangeTask, counter_millisecond / 100);
+                postDelayed(progressChangeTask, counter_millisecond / mMax);
             } else
                 progress = validateProgress(progress);
         }
     };
 
     /**
-     * progress type
+     * maxProgress, between 0-100,000
+     *
+     * @param maxProgress
+     */
+    public void setMaxProgress(int maxProgress) {
+        if (maxProgress < 0) {
+            maxProgress = 0;
+        } else if (maxProgress > 100000) {
+            maxProgress = 100000;
+        }
+        mMax = maxProgress;
+    }
+
+    public int getMaxProgress() {
+        return mMax;
+    }
+
+    /**
+     * progress direction
      */
     public enum ProgressDirection {
         /**
          * counterclockwise，from 0 to 100.
+         * 顺时针
          */
         COUNTERCLOCKWISE,
 
         /**
          * anti-clockwise，from 100 to 0.
+         * 逆时针
          */
-        ANTICLOCKWISE;
+        ANTICLOCKWISE
     }
 
     public interface ProgressUpdateListener {
         void onProgress(int what, int progress);
+    }
+
+    private float dp2px(int dp) {
+        return getResources().getDisplayMetrics().density * dp + 0.5f;
+    }
+
+    private int dp2pxInt(int dp) {
+        return (int) dp2px(dp);
     }
 }

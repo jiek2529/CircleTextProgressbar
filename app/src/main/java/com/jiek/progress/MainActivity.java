@@ -1,58 +1,61 @@
 package com.jiek.progress;
 
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ValueAnimator.AnimatorUpdateListener {
     /**
      * 默认类型。
      */
-    private CircleProgressbar mTvDefault;
+    private CircleProgressbar mTvDefault,
     /**
      * 五个字的。
      */
-    private CircleProgressbar mTvFive;
+    mTvFive,
     /**
      * 圆心点击变色。
      */
-    private CircleProgressbar mTvCicleColor;
+    mTvCicleColor,
 
     /**
      * 顺数进度条。
      */
-    private CircleProgressbar mTvCount;
+    mTvCount,
     /**
      * 宽进度条。
      */
-    private CircleProgressbar mTvWide;
+    mTvWide,
     /**
      * 窄进度条。
      */
-    private CircleProgressbar mTvNarrow;
+    mTvNarrow,
     /**
      * 红色进度条。
      */
-    private CircleProgressbar mTvRedPro;
+    mTvRedPro,
     /**
      * 红色边框。
      */
-    private CircleProgressbar mTvRedFrame;
+    mTvRedFrame,
     /**
      * 红色圆心。
      */
-    private CircleProgressbar mTvRedCircle;
+    mTvRedCircle,
     /**
      * 跳过。
      */
-    private CircleProgressbar mTvSkip;
+    mTvSkip,
     /**
      * 更新进度条文字。
      */
-    private CircleProgressbar mTvProgressBar1, mTvProgressBar2;
+    mTvProgressBar1, mTvProgressBar2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mTvDefault = (CircleProgressbar) findViewById(R.id.tv_default);
+        mTvDefault.setShapeStrokeColor(Color.RED);
         mTvFive = (CircleProgressbar) findViewById(R.id.tv_five_text);
         mTvCicleColor = (CircleProgressbar) findViewById(R.id.tv_red_circle_color);
 
@@ -69,12 +73,13 @@ public class MainActivity extends AppCompatActivity {
 
         // 宽进度条。
         mTvWide = (CircleProgressbar) findViewById(R.id.tv_five_wide);
-        mTvWide.setProgressLineWidth(10);//写入宽度。
+        mTvWide.setProgressArcWidth(10);//写入宽度。
+        mTvWide.setShapeStrokeColor(Color.YELLOW);
         mTvWide.setCounter_millisecond(10000);// 把倒计时时间改长一点。
 
         // 窄进度条。
         mTvNarrow = (CircleProgressbar) findViewById(R.id.tv_five_narrow);
-        mTvNarrow.setProgressLineWidth(3);// 写入宽度。
+        mTvNarrow.setProgressArcWidth(3);// 写入宽度。
 
         // 红色进度条。
         mTvRedPro = (CircleProgressbar) findViewById(R.id.tv_red_progress);
@@ -82,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 红色边框进度条。
         mTvRedFrame = (CircleProgressbar) findViewById(R.id.tv_red_frame);
-        mTvRedFrame.setOutLineColor(Color.RED);
+        mTvRedFrame.setShapeStrokeColor(Color.RED);
 
         // 红色圆心进度条。
         mTvRedCircle = (CircleProgressbar) findViewById(R.id.tv_red_circle);
@@ -98,10 +103,10 @@ public class MainActivity extends AppCompatActivity {
 
         // 模拟网易新闻跳过。
         mTvSkip = (CircleProgressbar) findViewById(R.id.tv_red_skip);
-        mTvSkip.setOutLineColor(Color.TRANSPARENT);
-        mTvSkip.setInCircleColor(Color.parseColor("#AAC6C6C6"));
+        mTvSkip.setShapeStrokeColor(Color.YELLOW);
+        mTvSkip.setInCircleColor(Color.parseColor("#AA00C6C6"));
         mTvSkip.setProgressColor(Color.DKGRAY);
-        mTvSkip.setProgressLineWidth(3);
+        mTvSkip.setProgressArcWidth(3);
     }
 
     private CircleProgressbar.ProgressUpdateListener progressListener = new CircleProgressbar.ProgressUpdateListener() {
@@ -128,19 +133,60 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menu_start) {
-            mTvDefault.reStart();
-            mTvFive.reStart();
-            mTvCicleColor.reStart();
-            mTvCount.reStart();
-            mTvWide.reStart();
-            mTvNarrow.reStart();
-            mTvRedPro.reStart();
-            mTvRedFrame.reStart();
-            mTvRedCircle.reStart();
-            mTvProgressBar1.reStart();
-            mTvProgressBar2.reStart();
-            mTvSkip.reStart();
+            progressAll(mTvDefault,
+                    mTvFive,
+                    mTvCicleColor,
+                    mTvCount,
+                    mTvWide,
+                    mTvNarrow,
+                    mTvRedPro,
+                    mTvRedFrame,
+                    mTvRedCircle,
+                    mTvProgressBar1,
+                    mTvProgressBar2,
+                    mTvSkip
+            );
         }
         return true;
+    }
+
+    private void progressAll(CircleProgressbar... views) {
+        count = 0;
+        for (CircleProgressbar v : views) {
+            v.setMaxProgress(100);
+            progress(v);
+//            v.reStart();
+        }
+    }
+
+    private void progress(CircleProgressbar view) {
+        try {
+            ValueAnimator va = ObjectAnimator.ofInt(view, "progress",
+                    20, view.getMaxProgress() - 20
+            );
+            va.setDuration(3000);
+////            va.setInterpolator(new BounceInterpolator());//后弹力
+            va.setInterpolator(new LinearInterpolator());//均匀
+//            va.setInterpolator(new AccelerateDecelerateInterpolator());//先加速后减速
+//            va.setInterpolator(new AccelerateInterpolator());//加速
+//            va.setInterpolator(new DecelerateInterpolator());//减速
+//            va.setInterpolator(new OvershootInterpolator());//最后超过再回来
+//            va.setInterpolator(new AnticipateOvershootInterpolator());//先退后超过再回来
+//            va.setInterpolator(new AnticipateInterpolator());//先退后
+//            va.setInterpolator(new CycleInterpolator(1));//弹簧,最后回到第一个值位置,期间执行次数
+            va.addUpdateListener(this);
+            va.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    int count = 0;
+
+    @Override
+    public void onAnimationUpdate(ValueAnimator animation) {
+        int value = (int) animation.getAnimatedValue();
+        count++;
+        mTvSkip.setText("v:" + value);
     }
 }

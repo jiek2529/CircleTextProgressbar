@@ -1,12 +1,13 @@
-# CircleTextProgressbar
+# CircleProgressbar
 
+----
 # 效果预览
 <image src="./image/demo.gif" width="350px"/>
 
 #简介与使用
 本质是一个TextView，所以TextView的基本属性它都有。
 
-`CircleTextProgressbar`支持自动倒计时，自动减少进度，自动增加进度等。
+`CircleProgressbar`支持自动倒计时，自动减少进度，自动增加进度等。
 
 如果需要自动走进度的话，设置完你自定义的属性后调用`start()`方法就可以自动倒计时了，如果想走完后再走一遍自动进度调用一下`reStart()`就OK了。
 
@@ -14,7 +15,7 @@
 
 ```java
 // 和系统普通进度条一样，0-100。
-progressBar.setProgressType(CircleTextProgressbar.ProgressType.COUNT);
+progressBar.setProgressType(CircleProgressbar.ProgressType.COUNT);
 
 // 改变进度条。
 progressBar.setProgressLineWidth(30);// 进度条宽度。
@@ -58,6 +59,22 @@ OnCountdownProgressListener progressListener = new OnCountdownProgressListener()
 ```
 
 ## 目前已知的兼容问题修复
-目前`CircleTextProgressbar`在`ReletiveLayot`中高度会变大，导致进度条会有一点点扁。修复方法如下：
-如果你要在`ReletiveLayot`中使用`CircleTextProgressbar`，就不要重写`onMeasure()`方法，然后在xml中指定`CircleTextProgressbar`的宽高就好，比如都指定为`50dp`，然后就没有问题啦。
+目前`CircleProgressbar`在`ReletiveLayot`中高度会变大，导致进度条会有一点点扁。修复方法如下：
+如果你要在`ReletiveLayot`中使用`CircleProgressbar`，就不要重写`onMeasure()`方法，然后在xml中指定`CircleProgressbar`的宽高就好，比如都指定为`50dp`，然后就没有问题啦。
 
+# License
+```
+Copyright 2016 Jiek
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```

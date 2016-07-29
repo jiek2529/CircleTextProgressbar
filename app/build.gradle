@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.3"
 
     defaultConfig {
-        applicationId "com.yanzhenjie.countdownprogress"
+        applicationId "com.jiek.progress"
         minSdkVersion 15
         targetSdkVersion 23
         versionCode 1
